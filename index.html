@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Book-Author Match Game</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; }
+        .item-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 20px; background: #fff; margin-bottom: 20px; border-bottom: 2px solid #ccc; }
+        .draggable { padding: 10px 20px; background: #007bff; color: white; cursor: grab; border-radius: 5px; user-select: none; }
+        .columns { display: flex; justify-content: space-around; margin-top: 20px; }
+        .column { width: 40%; min-height: 300px; background: #e9ecef; border: 2px dashed #999; border-radius: 10px; padding: 10px; }
+        .column h3 { color: #333; }
+        .correct { background: #28a745 !important; }
+        .wrong { background: #dc3545 !important; }
+    </style>
+</head>
+<body>
+
+    <h2>Match the Books with Authors</h2>
+    <p>Points: <span id="score">0</span></p>
+
+    <!-- Shuffled Items -->
+    <div class="item-container" id="source-box">
+        <div class="draggable" draggable="true" id="book1" data-pair="1">Godan</div>
+        <div class="draggable" draggable="true" id="author1" data-pair="1">Premchand</div>
+        <div class="draggable" draggable="true" id="book2" data-pair="2">Geetanjali</div>
+        <div class="draggable" draggable="true" id="author2" data-pair="2">R.N. Tagore</div>
+        <div class="draggable" draggable="true" id="book3" data-pair="3">Discovery of India</div>
+        <div class="draggable" draggable="true" id="author3" data-pair="3">J.L. Nehru</div>
+    </div>
+
+    <div class="columns">
+        <div class="column" id="books-col" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <h3>Books</h3>
+        </div>
+        <div class="column" id="authors-col" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <h3>Authors</h3>
+        </div>
+    </div>
+
+    <script>
+        let score = 0;
+
+        function allowDrop(ev) { ev.preventDefault(); }
+
+        function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
+
+        document.querySelectorAll('.draggable').forEach(item => {
+            item.addEventListener('dragstart', drag);
+        });
+
+        function drop(ev) {
+            ev.preventDefault();
+            let data = ev.dataTransfer.getData("text");
+            let draggedElement = document.getElementById(data);
+            
+            // Drop logic
+            if (ev.target.classList.contains('column')) {
+                ev.target.appendChild(draggedElement);
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            // Yahan hum logic check kar sakte hain ki kya sahi pair niche aaya hai
+            // Agar dono columns mein same 'data-pair' ki id hogi, to point badhega
+        }
+    </script>
+</body>
+</html>
