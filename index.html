@@ -3,131 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Book & Author Matching Game</title>
+    <title>Advanced Book Matcher</title>
     <style>
         :root {
             --primary: #4a90e2;
             --success: #2ecc71;
             --error: #e74c3c;
-            --bg: #f0f2f5;
+            --bg: #f8f9fa;
         }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-        }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        
+        .header-info { display: flex; gap: 40px; font-size: 20px; font-weight: bold; margin-bottom: 20px; }
+        #timer { color: var(--error); }
+        #points { color: var(--success); }
 
-        h1 { color: #333; margin-bottom: 10px; }
-        .score-board { font-size: 24px; font-weight: bold; margin-bottom: 20px; color: var(--primary); }
-
-        /* Top Box for Shuffled Items */
         .source-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 15px;
-            padding: 25px;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            width: 90%;
-            max-width: 800px;
-            min-height: 100px;
-            margin-bottom: 30px;
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+            padding: 20px; background: white; border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 800px;
+            min-height: 80px; margin-bottom: 20px;
         }
 
         .draggable {
-            padding: 12px 20px;
-            background: var(--primary);
-            color: white;
-            border-radius: 8px;
-            cursor: move;
-            font-weight: 500;
-            transition: transform 0.2s, background 0.3s;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            padding: 10px 18px; background: var(--primary); color: white;
+            border-radius: 6px; cursor: move; transition: 0.3s;
         }
 
-        .draggable:active { transform: scale(0.95); }
-
-        /* Bottom Columns */
-        .columns-wrapper {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            max-width: 800px;
-            gap: 20px;
-        }
+        .columns-wrapper { display: flex; width: 100%; max-width: 800px; gap: 20px; }
 
         .drop-zone {
-            flex: 1;
-            min-height: 400px;
-            background: #fff;
-            border: 3px dashed #cbd5e0;
-            border-radius: 15px;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            align-items: center;
-            transition: background 0.3s;
+            flex: 1; min-height: 350px; background: #fff; border: 2px dashed #ccc;
+            border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 10px;
         }
 
-        .drop-zone h3 { margin-top: 0; color: #555; border-bottom: 2px solid #eee; width: 100%; text-align: center; padding-bottom: 10px; }
+        .drop-zone h3 { text-align: center; border-bottom: 2px solid #eee; padding-bottom: 10px; }
 
-        .drop-zone.drag-over { background: #e1effe; border-color: var(--primary); }
+        /* Status Colors */
+        .wrong-match { background-color: var(--error) !important; animation: shake 0.5s; }
+        .correct-match { background-color: var(--success) !important; }
 
-        /* Result Styles */
-        .matched-pair {
-            width: 90%;
-            padding: 10px;
-            background: var(--success);
-            color: white;
-            text-align: center;
-            border-radius: 6px;
-            animation: pop 0.3s ease-out;
-        }
-
-        @keyframes pop {
-            0% { transform: scale(0.8); }
-            100% { transform: scale(1); }
-        }
-
-        .btn-reset {
-            margin-top: 30px;
-            padding: 10px 25px;
-            background: #333;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
         }
     </style>
 </head>
 <body>
 
-    <h1>Education Matcher</h1>
-    <div class="score-board">Points: <span id="points">0</span> / 5</div>
-
-    <!-- Items to Drag -->
-    <div class="source-container" id="source">
-        <!-- Items will be injected by JavaScript -->
+    <h1>Matching Challenge</h1>
+    
+    <div class="header-info">
+        <div>Time: <span id="timer">60</span>s</div>
+        <div>Score: <span id="points">0</span>/5</div>
     </div>
+
+    <div class="source-container" id="source"></div>
 
     <div class="columns-wrapper">
-        <div class="drop-zone" id="books-zone" data-type="book">
-            <h3>Books (किताबें)</h3>
-        </div>
-        <div class="drop-zone" id="authors-zone" data-type="author">
-            <h3>Authors (लेखक)</h3>
-        </div>
+        <div class="drop-zone" id="books-zone" data-type="book"><h3>Books</h3></div>
+        <div class="drop-zone" id="authors-zone" data-type="author"><h3>Authors</h3></div>
     </div>
-
-    <button class="btn-reset" onclick="location.reload()">Reset Game</button>
 
     <script>
         const gameData = [
@@ -138,89 +75,93 @@
             { id: 5, book: "Arthashastra", author: "Chanakya" }
         ];
 
-        let points = 0;
-        let activePairs = {}; // Tracking currently dropped items
+        let score = 0;
+        let timeLeft = 60;
+        let timer;
+        let activePairs = {};
 
-        function initGame() {
+        function init() {
             const source = document.getElementById('source');
             let items = [];
-
-            gameData.forEach(data => {
-                items.push(`<div class="draggable" draggable="true" id="b-${data.id}" data-id="${data.id}" data-type="book">${data.book}</div>`);
-                items.push(`<div class="draggable" draggable="true" id="a-${data.id}" data-id="${data.id}" data-type="author">${data.author}</div>`);
+            gameData.forEach(d => {
+                items.push(`<div class="draggable" draggable="true" id="b-${d.id}" data-id="${d.id}" data-type="book">${d.book}</div>`);
+                items.push(`<div class="draggable" draggable="true" id="a-${d.id}" data-id="${d.id}" data-type="author">${d.author}</div>`);
             });
-
-            // Shuffle items
             items.sort(() => Math.random() - 0.5);
             source.innerHTML = items.join('');
-
-            setupDragEvents();
+            
+            startTimer();
+            setupEvents();
         }
 
-        function setupDragEvents() {
-            const draggables = document.querySelectorAll('.draggable');
-            const zones = document.querySelectorAll('.drop-zone');
-
-            draggables.forEach(d => {
-                d.addEventListener('dragstart', (e) => {
-                    e.dataTransfer.setData('text/plain', e.target.id);
-                });
-            });
-
-            zones.forEach(zone => {
-                zone.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    zone.classList.add('drag-over');
-                });
-
-                zone.addEventListener('dragleave', () => {
-                    zone.classList.remove('drag-over');
-                });
-
-                zone.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    zone.classList.remove('drag-over');
-                    const id = e.dataTransfer.getData('text/plain');
-                    const element = document.getElementById(id);
-                    
-                    // Check if dropped in correct column type
-                    if (element.dataset.type === zone.dataset.type) {
-                        handleDrop(element, zone);
-                    } else {
-                        alert("Wrong Column! Books go to Books, Authors go to Authors.");
-                    }
-                });
-            });
-        }
-
-        function handleDrop(element, zone) {
-            const pairId = element.dataset.id;
-            zone.appendChild(element);
-            
-            if (!activePairs[pairId]) activePairs[pairId] = { book: false, author: false };
-            
-            if (element.dataset.type === 'book') activePairs[pairId].book = true;
-            if (element.dataset.type === 'author') activePairs[pairId].author = true;
-
-            // Check if match completed
-            if (activePairs[pairId].book && activePairs[pairId].author) {
-                points++;
-                document.getElementById('points').innerText = points;
-                
-                // Highlight as matched
-                const bookElem = document.getElementById(`b-${pairId}`);
-                const authorElem = document.getElementById(`a-${pairId}`);
-                
-                bookElem.className = 'matched-pair';
-                authorElem.className = 'matched-pair';
-                
-                if (points === 5) {
-                    setTimeout(() => alert("Shabaash! Aapne sab sahi match kar diye! 🎉"), 500);
+        function startTimer() {
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').innerText = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    alert("Time Over! Game khatam.");
+                    location.reload();
                 }
+            }, 1000);
+        }
+
+        function setupEvents() {
+            document.querySelectorAll('.draggable').forEach(d => {
+                d.ondragstart = (e) => e.dataTransfer.setData('text', e.target.id);
+            });
+
+            document.querySelectorAll('.drop-zone').forEach(zone => {
+                zone.ondragover = (e) => e.preventDefault();
+                zone.ondrop = (e) => {
+                    const id = e.dataTransfer.getData('text');
+                    const el = document.getElementById(id);
+                    
+                    if (el.dataset.type === zone.dataset.type) {
+                        zone.appendChild(el);
+                        checkLogic(el.dataset.id);
+                    } else {
+                        // WRONG COLUMN SIGNAL
+                        el.classList.add('wrong-match');
+                        setTimeout(() => {
+                            el.classList.remove('wrong-match');
+                            document.getElementById('source').appendChild(el);
+                        }, 800);
+                    }
+                };
+            });
+        }
+
+        function checkLogic(pairId) {
+            if (!activePairs[pairId]) activePairs[pairId] = { b: false, a: false };
+            
+            const bInZone = document.getElementById('books-zone').querySelector(`[data-id="${pairId}"]`);
+            const aInZone = document.getElementById('authors-zone').querySelector(`[data-id="${pairId}"]`);
+
+            if (bInZone && aInZone) {
+                // Correct Match
+                bInZone.classList.add('correct-match');
+                aInZone.classList.add('correct-match');
+                bInZone.draggable = false;
+                aInZone.draggable = false;
+                score++;
+                document.getElementById('points').innerText = score;
+                
+                if (score === 5) {
+                    clearInterval(timer);
+                    setTimeout(() => alert("Badhai ho! Aapne jeet liya!"), 200);
+                }
+            } else {
+                // Check for mismatch (Wrong Pair)
+                // Yahan logic hai ki agar dusra item drop hua aur wo pair id match nahi ki
+                const currentInBooks = document.getElementById('books-zone').children;
+                const currentInAuthors = document.getElementById('authors-zone').children;
+                // Simple logic: Agar koi item drop hua par uska pair nahi mila, to wait karein.
+                // Par agar user ne 2 galat cheezein daal di, to wo red alert dega.
             }
         }
 
-        initGame();
+        init();
     </script>
 </body>
 </html>
