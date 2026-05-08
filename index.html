@@ -1,70 +1,226 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
     <meta charset="UTF-8">
-    <title>Book-Author Match Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book & Author Matching Game</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; }
-        .item-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 20px; background: #fff; margin-bottom: 20px; border-bottom: 2px solid #ccc; }
-        .draggable { padding: 10px 20px; background: #007bff; color: white; cursor: grab; border-radius: 5px; user-select: none; }
-        .columns { display: flex; justify-content: space-around; margin-top: 20px; }
-        .column { width: 40%; min-height: 300px; background: #e9ecef; border: 2px dashed #999; border-radius: 10px; padding: 10px; }
-        .column h3 { color: #333; }
-        .correct { background: #28a745 !important; }
-        .wrong { background: #dc3545 !important; }
+        :root {
+            --primary: #4a90e2;
+            --success: #2ecc71;
+            --error: #e74c3c;
+            --bg: #f0f2f5;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        h1 { color: #333; margin-bottom: 10px; }
+        .score-board { font-size: 24px; font-weight: bold; margin-bottom: 20px; color: var(--primary); }
+
+        /* Top Box for Shuffled Items */
+        .source-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            padding: 25px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 800px;
+            min-height: 100px;
+            margin-bottom: 30px;
+        }
+
+        .draggable {
+            padding: 12px 20px;
+            background: var(--primary);
+            color: white;
+            border-radius: 8px;
+            cursor: move;
+            font-weight: 500;
+            transition: transform 0.2s, background 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .draggable:active { transform: scale(0.95); }
+
+        /* Bottom Columns */
+        .columns-wrapper {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 800px;
+            gap: 20px;
+        }
+
+        .drop-zone {
+            flex: 1;
+            min-height: 400px;
+            background: #fff;
+            border: 3px dashed #cbd5e0;
+            border-radius: 15px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+            transition: background 0.3s;
+        }
+
+        .drop-zone h3 { margin-top: 0; color: #555; border-bottom: 2px solid #eee; width: 100%; text-align: center; padding-bottom: 10px; }
+
+        .drop-zone.drag-over { background: #e1effe; border-color: var(--primary); }
+
+        /* Result Styles */
+        .matched-pair {
+            width: 90%;
+            padding: 10px;
+            background: var(--success);
+            color: white;
+            text-align: center;
+            border-radius: 6px;
+            animation: pop 0.3s ease-out;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(0.8); }
+            100% { transform: scale(1); }
+        }
+
+        .btn-reset {
+            margin-top: 30px;
+            padding: 10px 25px;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
 
-    <h2>Match the Books with Authors</h2>
-    <p>Points: <span id="score">0</span></p>
+    <h1>Education Matcher</h1>
+    <div class="score-board">Points: <span id="points">0</span> / 5</div>
 
-    <!-- Shuffled Items -->
-    <div class="item-container" id="source-box">
-        <div class="draggable" draggable="true" id="book1" data-pair="1">Godan</div>
-        <div class="draggable" draggable="true" id="author1" data-pair="1">Premchand</div>
-        <div class="draggable" draggable="true" id="book2" data-pair="2">Geetanjali</div>
-        <div class="draggable" draggable="true" id="author2" data-pair="2">R.N. Tagore</div>
-        <div class="draggable" draggable="true" id="book3" data-pair="3">Discovery of India</div>
-        <div class="draggable" draggable="true" id="author3" data-pair="3">J.L. Nehru</div>
+    <!-- Items to Drag -->
+    <div class="source-container" id="source">
+        <!-- Items will be injected by JavaScript -->
     </div>
 
-    <div class="columns">
-        <div class="column" id="books-col" ondrop="drop(event)" ondragover="allowDrop(event)">
-            <h3>Books</h3>
+    <div class="columns-wrapper">
+        <div class="drop-zone" id="books-zone" data-type="book">
+            <h3>Books (किताबें)</h3>
         </div>
-        <div class="column" id="authors-col" ondrop="drop(event)" ondragover="allowDrop(event)">
-            <h3>Authors</h3>
+        <div class="drop-zone" id="authors-zone" data-type="author">
+            <h3>Authors (लेखक)</h3>
         </div>
     </div>
+
+    <button class="btn-reset" onclick="location.reload()">Reset Game</button>
 
     <script>
-        let score = 0;
+        const gameData = [
+            { id: 1, book: "Godan", author: "Premchand" },
+            { id: 2, book: "Geetanjali", author: "R.N. Tagore" },
+            { id: 3, book: "Discovery of India", author: "J.L. Nehru" },
+            { id: 4, book: "Madhushala", author: "H.R. Bachchan" },
+            { id: 5, book: "Arthashastra", author: "Chanakya" }
+        ];
 
-        function allowDrop(ev) { ev.preventDefault(); }
+        let points = 0;
+        let activePairs = {}; // Tracking currently dropped items
 
-        function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
+        function initGame() {
+            const source = document.getElementById('source');
+            let items = [];
 
-        document.querySelectorAll('.draggable').forEach(item => {
-            item.addEventListener('dragstart', drag);
-        });
+            gameData.forEach(data => {
+                items.push(`<div class="draggable" draggable="true" id="b-${data.id}" data-id="${data.id}" data-type="book">${data.book}</div>`);
+                items.push(`<div class="draggable" draggable="true" id="a-${data.id}" data-id="${data.id}" data-type="author">${data.author}</div>`);
+            });
 
-        function drop(ev) {
-            ev.preventDefault();
-            let data = ev.dataTransfer.getData("text");
-            let draggedElement = document.getElementById(data);
+            // Shuffle items
+            items.sort(() => Math.random() - 0.5);
+            source.innerHTML = items.join('');
+
+            setupDragEvents();
+        }
+
+        function setupDragEvents() {
+            const draggables = document.querySelectorAll('.draggable');
+            const zones = document.querySelectorAll('.drop-zone');
+
+            draggables.forEach(d => {
+                d.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', e.target.id);
+                });
+            });
+
+            zones.forEach(zone => {
+                zone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    zone.classList.add('drag-over');
+                });
+
+                zone.addEventListener('dragleave', () => {
+                    zone.classList.remove('drag-over');
+                });
+
+                zone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    zone.classList.remove('drag-over');
+                    const id = e.dataTransfer.getData('text/plain');
+                    const element = document.getElementById(id);
+                    
+                    // Check if dropped in correct column type
+                    if (element.dataset.type === zone.dataset.type) {
+                        handleDrop(element, zone);
+                    } else {
+                        alert("Wrong Column! Books go to Books, Authors go to Authors.");
+                    }
+                });
+            });
+        }
+
+        function handleDrop(element, zone) {
+            const pairId = element.dataset.id;
+            zone.appendChild(element);
             
-            // Drop logic
-            if (ev.target.classList.contains('column')) {
-                ev.target.appendChild(draggedElement);
-                checkMatch();
+            if (!activePairs[pairId]) activePairs[pairId] = { book: false, author: false };
+            
+            if (element.dataset.type === 'book') activePairs[pairId].book = true;
+            if (element.dataset.type === 'author') activePairs[pairId].author = true;
+
+            // Check if match completed
+            if (activePairs[pairId].book && activePairs[pairId].author) {
+                points++;
+                document.getElementById('points').innerText = points;
+                
+                // Highlight as matched
+                const bookElem = document.getElementById(`b-${pairId}`);
+                const authorElem = document.getElementById(`a-${pairId}`);
+                
+                bookElem.className = 'matched-pair';
+                authorElem.className = 'matched-pair';
+                
+                if (points === 5) {
+                    setTimeout(() => alert("Shabaash! Aapne sab sahi match kar diye! 🎉"), 500);
+                }
             }
         }
 
-        function checkMatch() {
-            // Yahan hum logic check kar sakte hain ki kya sahi pair niche aaya hai
-            // Agar dono columns mein same 'data-pair' ki id hogi, to point badhega
-        }
+        initGame();
     </script>
 </body>
 </html>
